@@ -1,0 +1,1 @@
+MODEL EVALUATION RESULTS (Optimized - No Diesel/Filtering)\nBest Params: {'seasonality_mode': 'additive', 'changepoint_prior_scale': 0.5, 'seasonality_prior_scale': 10.0}\nMean Absolute Error (MAE): 514.23\nRoot Mean Squared Error (RMSE): 582.38\nMean Absolute Percentage Error (MAPE): 25.03%\nDirectional Accuracy: 71.15%\nDirectional F1 Score: 0.7078\n

@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.pyc
+Agriculture_price_dataset.csv
+onion_prophet_model.json

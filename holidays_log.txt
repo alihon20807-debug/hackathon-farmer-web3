@@ -1,0 +1,138 @@
+Holidays included for India:
+
+Holiday Dates (Total: 112):
+            ds                         holiday
+0   2020-01-26                    Republic Day
+8   2020-02-21                 Maha Shivaratri
+7   2020-04-06                 Mahavir Jayanti
+14  2020-04-10                     Good Friday
+3   2020-05-07                  Buddha Purnima
+12  2020-05-25                     Eid al-Fitr
+13  2020-08-01                     Eid al-Adha
+5   2020-08-12                     Janmashtami
+1   2020-08-15                Independence Day
+10  2020-08-30                          Ashura
+2   2020-10-02                  Gandhi Jayanti
+6   2020-10-25                        Dussehra
+11  2020-10-30              Prophet's Birthday
+4   2020-11-14                          Diwali
+9   2020-11-30              Guru Nanak Jayanti
+15  2020-12-25                       Christmas
+16  2021-01-26                    Republic Day
+24  2021-03-11                 Maha Shivaratri
+30  2021-04-02                     Good Friday
+23  2021-04-25                 Mahavir Jayanti
+28  2021-05-14                     Eid al-Fitr
+19  2021-05-26                  Buddha Purnima
+29  2021-07-21                     Eid al-Adha
+17  2021-08-15                Independence Day
+26  2021-08-20                          Ashura
+21  2021-08-30                     Janmashtami
+18  2021-10-02                  Gandhi Jayanti
+22  2021-10-15                        Dussehra
+27  2021-10-19              Prophet's Birthday
+20  2021-11-04                          Diwali
+25  2021-11-19              Guru Nanak Jayanti
+31  2021-12-25                       Christmas
+32  2022-01-26                    Republic Day
+40  2022-03-01                 Maha Shivaratri
+39  2022-04-14                 Mahavir Jayanti
+46  2022-04-15                     Good Friday
+44  2022-05-03                     Eid al-Fitr
+35  2022-05-16                  Buddha Purnima
+45  2022-07-10                     Eid al-Adha
+42  2022-08-09                          Ashura
+33  2022-08-15                Independence Day
+37  2022-08-19                     Janmashtami
+34  2022-10-02                  Gandhi Jayanti
+38  2022-10-05                        Dussehra
+43  2022-10-09              Prophet's Birthday
+36  2022-10-24                          Diwali
+41  2022-11-08              Guru Nanak Jayanti
+47  2022-12-25                       Christmas
+48  2023-01-26                    Republic Day
+56  2023-02-18                 Maha Shivaratri
+55  2023-04-04                 Mahavir Jayanti
+62  2023-04-07                     Good Friday
+60  2023-04-22                     Eid al-Fitr
+51  2023-05-05                  Buddha Purnima
+61  2023-06-29                     Eid al-Adha
+58  2023-07-29                          Ashura
+49  2023-08-15                Independence Day
+53  2023-09-07                     Janmashtami
+59  2023-09-28              Prophet's Birthday
+50  2023-10-02                  Gandhi Jayanti
+54  2023-10-24                        Dussehra
+52  2023-11-12                          Diwali
+57  2023-11-27              Guru Nanak Jayanti
+63  2023-12-25                       Christmas
+64  2024-01-26                    Republic Day
+72  2024-03-08                 Maha Shivaratri
+78  2024-03-29                     Good Friday
+76  2024-04-11                     Eid al-Fitr
+71  2024-04-21                 Mahavir Jayanti
+67  2024-05-23                  Buddha Purnima
+77  2024-06-17                     Eid al-Adha
+74  2024-07-17                          Ashura
+65  2024-08-15                Independence Day
+69  2024-08-26                     Janmashtami
+75  2024-09-16              Prophet's Birthday
+66  2024-10-02                  Gandhi Jayanti
+70  2024-10-12                        Dussehra
+68  2024-10-31                          Diwali
+73  2024-11-15              Guru Nanak Jayanti
+79  2024-12-25                       Christmas
+80  2025-01-26                    Republic Day
+88  2025-02-26                 Maha Shivaratri
+92  2025-03-31                     Eid al-Fitr
+87  2025-04-10                 Mahavir Jayanti
+94  2025-04-18                     Good Friday
+84  2025-05-12                  Buddha Purnima
+93  2025-06-07                     Eid al-Adha
+90  2025-07-06                          Ashura
+81  2025-08-15                Independence Day
+86  2025-08-16                     Janmashtami
+91  2025-09-05              Prophet's Birthday
+83  2025-10-02                  Gandhi Jayanti
+82  2025-10-02                        Dussehra
+85  2025-10-20                          Diwali
+89  2025-11-05              Guru Nanak Jayanti
+95  2025-12-25                       Christmas
+96  2026-01-26                    Republic Day
+104 2026-02-15                 Maha Shivaratri
+108 2026-03-21         Eid al-Fitr (estimated)
+103 2026-03-31                 Mahavir Jayanti
+110 2026-04-03                     Good Friday
+99  2026-05-01                  Buddha Purnima
+109 2026-05-28         Eid al-Adha (estimated)
+106 2026-06-26              Ashura (estimated)
+97  2026-08-15                Independence Day
+107 2026-08-26  Prophet's Birthday (estimated)
+101 2026-09-04                     Janmashtami
+98  2026-10-02                  Gandhi Jayanti
+102 2026-10-20                        Dussehra
+100 2026-11-08                          Diwali
+105 2026-11-24              Guru Nanak Jayanti
+111 2026-12-25                       Christmas
+
+Unique Holiday Names:
+- Ashura
+- Ashura (estimated)
+- Buddha Purnima
+- Christmas
+- Diwali
+- Dussehra
+- Eid al-Adha
+- Eid al-Adha (estimated)
+- Eid al-Fitr
+- Eid al-Fitr (estimated)
+- Gandhi Jayanti
+- Good Friday
+- Guru Nanak Jayanti
+- Independence Day
+- Janmashtami
+- Maha Shivaratri
+- Mahavir Jayanti
+- Prophet's Birthday
+- Prophet's Birthday (estimated)
+- Republic Day
