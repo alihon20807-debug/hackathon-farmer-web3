@@ -1,6 +1,8 @@
 import pandas as pd
 from prophet import Prophet
+from prophet.diagnostics import cross_validation, performance_metrics
 from prophet.serialize import model_to_json
+
 import json
 import os
 import numpy as np
@@ -196,6 +198,33 @@ def train_and_save():
     print(f"Test RMSE: {rmse:.2f}")
     print(f"Test MAPE: {mape:.2f}%")
 
+    # --- CROSS-VALIDATION (Rolling Window) ---
+    print("\n--- Running Cross-Validation (Rolling Window) ---")
+    # Initial training period: 365 days (1 year)
+    # Period: 30 days (make a forecast every 30 days)
+    # Horizon: 30 days (forecast 30 days into the future)
+    
+    # Ensure parallel processing if available or just run single threaded to avoid pickling errors
+    # parallel="processes" sometimes fails on Windows in scripts without __name__ guard protection
+    # We will use default (serial) to be safe.
+    
+    try:
+        df_cv = cross_validation(final_model, initial='365 days', period='30 days', horizon='30 days')
+        df_p = performance_metrics(df_cv)
+        
+        cv_mape = df_p['mape'].mean() * 100
+        cv_rmse = df_p['rmse'].mean()
+        cv_mae = df_p['mae'].mean()
+        
+        print(f"Cross-Validation MAPE: {cv_mape:.2f}%")
+        print(f"Cross-Validation RMSE: {cv_rmse:.2f}")
+        print(f"Cross-Validation MAE: {cv_mae:.2f}")
+        
+    except Exception as e:
+        print(f"Cross-Validation failed: {e}")
+        cv_mape = float('nan')
+
+
     # Directional Accuracy (Did price go Up/Down correctly?)
     # Compare change from previous day
     # We need the last day of training data to get the change for the first day of test data
@@ -232,6 +261,8 @@ def train_and_save():
     # Write results to file
     with open('evaluation_results.txt', 'w') as f:
         f.write("MODEL EVALUATION RESULTS (Multiplicative Mode - w/ Transport Costs Lag 3) - BEST\\n")
+        f.write(f"CV MAPE (Rolling Window): {cv_mape:.2f}%\\n")
+
 
 
 
