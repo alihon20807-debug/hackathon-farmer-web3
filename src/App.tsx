@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Activity, Tractor, Leaf, Box, Settings, Menu, Wallet } from 'lucide-react'
+import { Activity, Tractor, Leaf, Box, Menu, Wallet } from 'lucide-react'
 import { Toaster, toast } from 'sonner' // Added Sonner
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { SatelliteDialog } from '@/components/SatelliteDialog'
 import { calculateOnionPrice, getSatelliteCoordinates, getSatelliteStatus } from '@/lib/simulator' // Imported logic
 
 // Mock Hashes (Static for now, but could be dynamic too)
@@ -364,48 +365,55 @@ export default function App() {
                                 </p>
                             </CardContent>
                         </Card>
-
                         {/* NDVI Vision - Dynamic */}
-                        <Card className="glass-card border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)] overflow-hidden relative group bg-slate-900/60">
-                            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-sm font-bold text-emerald-400">
-                                    <Box className="h-4 w-4" />
-                                    SATELLITE NDVI VISION
-                                </CardTitle>
-                                <div className="flex items-center gap-2">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                    </span>
-                                    <span className="text-[10px] font-mono text-red-500 uppercase font-bold tracking-tighter">Live Feed</span>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-2">
-                                <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-black">
-                                    {/* The Moving Scan Line */}
-                                    <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(16,185,129,0.2)_50%,transparent_100%)] animate-[scan_3s_linear_infinite] z-20" />
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Card className="glass-card border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)] overflow-hidden relative group bg-slate-900/60 cursor-pointer transition-all hover:scale-[1.01]">
+                                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2 text-sm font-bold text-emerald-400">
+                                            <Box className="h-4 w-4" />
+                                            SATELLITE NDVI VISION
+                                        </CardTitle>
+                                        <div className="flex items-center gap-2">
+                                            <span className="relative flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                            </span>
+                                            <span className="text-[10px] font-mono text-red-500 uppercase font-bold tracking-tighter">Live Feed</span>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-2">
+                                        <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-black">
+                                            {/* The Moving Scan Line */}
+                                            <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(16,185,129,0.2)_50%,transparent_100%)] animate-[scan_3s_linear_infinite] z-20" />
 
-                                    {/* Dark Satellite Map Image */}
-                                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80')] bg-cover opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700" />
+                                            {/* Dark Satellite Map Image */}
+                                            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80')] bg-cover opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700" />
 
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-30">
-                                        <div className="bg-black/60 backdrop-blur-md p-3 rounded-md border border-emerald-500/30">
-                                            <p className="text-[10px] font-mono text-emerald-500 text-center mb-2 tracking-[0.3em] font-bold">{satStatus}...</p>
-                                            <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-white">
-                                                <div className="text-center border-r border-white/10 pr-2">
-                                                    <span className="block text-slate-500 text-[8px]">LATITUDE</span>
-                                                    <span className="text-emerald-400">{coords.lat}</span>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-30">
+                                                <div className="bg-black/60 backdrop-blur-md p-3 rounded-md border border-emerald-500/30">
+                                                    <p className="text-[10px] font-mono text-emerald-500 text-center mb-2 tracking-[0.3em] font-bold">{satStatus}...</p>
+                                                    <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-white">
+                                                        <div className="text-center border-r border-white/10 pr-2">
+                                                            <span className="block text-slate-500 text-[8px]">LATITUDE</span>
+                                                            <span className="text-emerald-400">{coords.lat}</span>
+                                                        </div>
+                                                        <div className="text-center pl-2">
+                                                            <span className="block text-slate-500 text-[8px]">LONGITUDE</span>
+                                                            <span className="text-emerald-400">{coords.lng}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="text-center pl-2">
-                                                    <span className="block text-slate-500 text-[8px]">LONGITUDE</span>
-                                                    <span className="text-emerald-400">{coords.lng}</span>
+                                                <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Badge className="bg-emerald-500 text-black font-bold">CLICK TO INSPECT</Badge>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                    </CardContent>
+                                </Card>
+                            </DialogTrigger>
+                            <SatelliteDialog />
+                        </Dialog>
 
                         {/* Blockchain Hashes */}
                         <Card className={`glass border-slate-800 bg-slate-900/40 flex-1 transition-all duration-300 ${isSyncing ? "border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.2)]" : ""}`}>
@@ -437,23 +445,6 @@ export default function App() {
                         <span>🚜 DIESEL PRICES STABILIZING AFTER RECENT HIKES</span>
                         <span>🌩️ MONSOON DELAYS IMPACTING WESTERN MAHARASHTRA CROPS</span>
                         <span>📉 GOVT CONSIDERING EXPORT SUBSIDIES FOR POTATO FARMERS</span>
-                    </div>
-                </div>
-            )}
-            {/* Live Feeds Ticker */}
-            {activeView === 'live-feeds' && (
-                <div className="fixed bottom-0 left-0 right-0 h-10 bg-black/80 backdrop-blur-md border-t border-emerald-500/30 flex items-center overflow-hidden z-50">
-                    <div className="bg-emerald-600 px-3 h-full flex items-center text-xs font-bold text-white uppercase tracking-wider z-10 shadow-lg">
-                        Live News
-                    </div>
-                    <div className="flex animate-[slide_20s_linear_infinite] whitespace-nowrap gap-12 pl-4 text-xs font-mono text-emerald-400/80">
-                        <span>🥬 NASHIK REGION REPORTS 15% OVERPRODUCTION OF RED ONIONS</span>
-                        <span>🚜 DIESEL PRICES STABILIZING AFTER RECENT HIKES</span>
-                        <span>🌩️ MONSOON DELAYS IMPACTING WESTERN MAHARASHTRA CROPS</span>
-                        <span>📉 GOVT CONSIDERING EXPORT SUBSIDIES FOR POTATO FARMERS</span>
-                        {/* Duplicate for seamless scroll if needed, or rely on CSS logic */}
-                        <span>🥬 NASHIK REGION REPORTS 15% OVERPRODUCTION OF RED ONIONS</span>
-                        <span>🚜 DIESEL PRICES STABILIZING AFTER RECENT HIKES</span>
                     </div>
                 </div>
             )}
