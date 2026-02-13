@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+
+        --primary: 142.1 76.2% 36.3%;
+        /* Green 500 for Web3/Agri vibe */
+        --primary-foreground: 355.7 100% 97.3%;
+
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 142.1 76.2% 36.3%;
+
+        --radius: 0.5rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-slate-950 text-foreground selection:bg-green-500/30;
+    }
+}
+
+/* Glassmorphism Utilities */
+.glass {
+    @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-xl;
+}
+
+.glass-card {
+    @apply backdrop-blur-md bg-slate-900/40 border border-slate-700/50 shadow-lg rounded-xl;
+}
+
+.neon-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600;
+}
+
+/* Custom Scrollbar for the Wallet Drawer and beyond */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.1);
+    /* Slate-900 transparent */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #10b981;
+    /* Emerald-500 */
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #34d399;
+    /* Emerald-400 */
+}
+
+/* Specifically for Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #10b981 rgba(15, 23, 42, 0.1);
+}
+
+@keyframes slide {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
