@@ -125,7 +125,7 @@ def secure_ai_forecast(date, market_data_dict):
     
     # Step D: Send it to the blockchain!
     print("Sending transaction to Sepolia...")
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     
     # Wait for the block to be mined
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
@@ -141,4 +141,5 @@ if __name__ == '__main__':
         "weather_factor": "Heavy Rain Warning"
     }
     
+
     secure_ai_forecast("2026-02-13", ai_prediction_output)
