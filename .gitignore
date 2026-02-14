@@ -5,3 +5,6 @@ Agriculture_price_dataset.csv
 onion_prophet_model.json
 server.log
 *.log
+*.pth
+*.csv
+metrics.txt
