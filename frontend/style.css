@@ -1,0 +1,247 @@
+:root {
+    --bg: #FAFAFA;
+    --text: #111111;
+    --text-secondary: #666666;
+    --border: #E5E5E5;
+    --primary: #111111;
+    --accent: #2563EB;
+    --danger: #DC2626;
+    --surface: #FFFFFF;
+    --font: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+}
+
+header {
+    margin-bottom: 4rem;
+    text-align: center;
+}
+
+h1 {
+    font-weight: 600;
+    font-size: 2rem;
+    margin: 0;
+    letter-spacing: -0.03em;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-top: 0.5rem;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4rem;
+}
+
+@media (min-width: 768px) {
+    main {
+        grid-template-columns: 300px 1fr;
+        align-items: start;
+    }
+}
+
+/* Controls */
+.controls {
+    padding-right: 2rem;
+}
+
+.control-group {
+    margin-bottom: 2rem;
+}
+
+label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+}
+
+.val {
+    color: var(--text-secondary);
+    font-feature-settings: "tnum";
+}
+
+/* Inputs */
+input[type="date"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+input[type="date"]:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    background: transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--primary);
+    cursor: pointer;
+    margin-top: -7px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.checkbox-group input {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--primary);
+}
+
+.checkbox-group label {
+    margin-bottom: 0;
+    font-weight: 400;
+}
+
+.primary-button {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.primary-button:hover {
+    opacity: 0.9;
+}
+
+.primary-button:active {
+    transform: scale(0.98);
+}
+
+/* Results */
+.results {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.result-card .label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.result-card .value {
+    font-size: 4rem;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 1rem;
+}
+
+.currency {
+    font-size: 2rem;
+    vertical-align: super;
+    margin-right: 0.25rem;
+    color: var(--text-secondary);
+}
+
+.meta {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #F3F4F6;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+}
+
+.blockchain-proof {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    text-align: left;
+}
+
+.proof-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+code {
+    display: block;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    word-break: break-all;
+    background: #F9FAFB;
+    padding: 1rem;
+    border-radius: 6px;
+}

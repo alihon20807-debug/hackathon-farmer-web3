@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Agri-Oracle | Liquid Glass Forecast</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3b82f6",
+                        "primary-glow": "#60a5fa",
+                        "accent": "#10b981",
+                        "accent-glow": "#34d399",
+                        "glass-surface": "rgba(255, 255, 255, 0.05)",
+                        "glass-border": "rgba(255, 255, 255, 0.1)",
+                        "glass-highlight": "rgba(255, 255, 255, 0.15)",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    backgroundImage: {
+                        'liquid-gradient': 'radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%)',
+                        'organic-blob': 'linear-gradient(to right, #4f46e5, #06b6d4)',
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                        'glow-primary': '0 0 15px rgba(59, 130, 246, 0.5)',
+                        'glow-accent': '0 0 15px rgba(16, 185, 129, 0.5)',
+                        'inner-light': 'inset 0 0 20px rgba(255, 255, 255, 0.05)',
+                    }
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+            background-color: #0f172a;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .orb-1 {
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: #1e3a8a;
+        }
+
+        .orb-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: #0f172a;
+        }
+
+        .orb-3 {
+            top: 40%;
+            left: 40%;
+            width: 30vw;
+            height: 30vw;
+            background: #312e81;
+            opacity: 0.4;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #60a5fa;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body
+    class="text-slate-100 min-h-screen flex flex-col font-display antialiased selection:bg-primary selection:text-white transition-colors duration-300 overflow-x-hidden">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <nav
+        class="w-full px-6 py-4 flex items-center justify-between bg-slate-900/30 backdrop-blur-md sticky top-0 z-50 border-b border-white/5">
+        <div class="flex items-center gap-2">
+            <div
+                class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-glow-primary">
+                A
+            </div>
+            <span class="font-semibold text-lg tracking-tight text-white drop-shadow-md">Agri-Oracle</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-slate-400" id="status-message">System Online</span>
+            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-glow-accent dot"></div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto px-4 py-12 max-w-7xl relative z-10">
+        <header class="mb-12 text-center md:text-left flex flex-col md:flex-row justify-between items-end gap-4">
+            <div>
+                <div
+                    class="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary-glow text-xs font-medium mb-4 backdrop-blur-sm shadow-inner-light">
+                    <span class="material-icons-round text-sm mr-1">today</span> Forecast Reference: <span
+                        id="prediction-date-display" class="ml-1">--</span>
+                </div>
+                <h1
+                    class="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-400 mb-2 drop-shadow-lg">
+                    Onion Price Oracle
+                </h1>
+                <p class="text-slate-400 text-lg max-w-2xl font-light">
+                    Real-time policy impact simulation and blockchain-verified forecasting.
+                </p>
+            </div>
+
+            <!-- Controls Form wrapper -->
+            <form id="simulation-form" class="contents">
+                <div class="glass-card rounded-xl p-4 flex flex-row items-end gap-4 overflow-visible">
+                    <!-- Date Input Group -->
+                    <div class="shrink-0">
+                        <label class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Reference Date</label>
+                        <input type="date" id="prediction_date"
+                            class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-primary/50 outline-none block w-40 shadow-inner-light h-[38px]">
+                    </div>
+
+                    <!-- Quick Selects -->
+                    <div class="flex items-center gap-2">
+                        <button type="button" data-period="tomorrow"
+                            class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
+                            +1 Day
+                        </button>
+                        <button type="button" data-period="next_week"
+                            class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
+                            +1 Week
+                        </button>
+                        <button type="button" data-period="next_month"
+                            class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
+                            +1 Month
+                        </button>
+                    </div>
+
+                    <div class="md:grow"></div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-2 ml-auto md:ml-0">
+                        <button type="button" id="lock-benchmark-btn"
+                            class="bg-white/5 hover:bg-white/10 text-slate-300 px-4 py-2 rounded-lg font-medium transition-all border border-white/10 flex items-center gap-2 text-xs whitespace-nowrap h-[38px] shadow-sm">
+                            <span class="material-icons-round text-sm">lock_open</span> Lock vs
+                        </button>
+                        <button type="submit"
+                            class="bg-primary hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-glow-primary flex items-center gap-2 whitespace-nowrap h-[38px]">
+                            <span class="material-icons-round text-sm">refresh</span> Simulate
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-8">
+            <!-- Card 1: Forecast Result -->
+            <div
+                class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col justify-between h-80 relative overflow-hidden">
+                <div
+                    class="absolute -top-20 -left-20 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700">
+                </div>
+                <div class="absolute top-0 right-0 p-4 opacity-50">
+                    <span id="trend-arrow" class="material-icons-round text-4xl text-white/10">trending_up</span>
+                </div>
+
+                <div>
+                    <h3 class="text-slate-400 text-sm font-medium uppercase tracking-widest mb-1">Predicted Price</h3>
+                    <div class="text-5xl font-bold text-white mb-2 flex items-baseline gap-2">
+                        ₹<span id="final-price">--</span>
+                    </div>
+
+                    <!-- Comparison Display (Hidden by default) -->
+                    <div id="comparison-display"
+                        class="hidden items-center gap-2 text-sm mb-4 bg-white/5 p-2 rounded-lg border border-white/5 w-fit">
+                        <span class="text-slate-400">vs Locked:</span>
+                        <span id="comp-delta-price" class="font-bold">--</span>
+                        <span id="comp-delta-pct" class="text-xs opacity-80">--</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-1">
+                        <div id="status-dot"
+                            class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                        <span id="market-state" class="text-sm font-medium text-emerald-400">Stable Market</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-sm text-slate-400">
+                    <span>Baseline: ₹<span id="baseline-price">--.--</span></span>
+                </div>
+
+                <div class="mt-auto border-t border-white/10 pt-4">
+                    <p id="confidence-display"
+                        class="text-sm text-slate-300 leading-relaxed font-light flex items-center gap-2">
+                        <span class="material-icons-round text-emerald-400">verified_user</span>
+                        Confidence Interval: 95%
+                    </p>
+                </div>
+            </div>
+
+            <!-- Card 2: Policy Controls -->
+            <div
+                class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col h-80 relative overflow-hidden">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6">Policy Adjustments</h3>
+
+                <div class="space-y-6 relative z-10">
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-sm text-slate-300">Diesel Tax</label>
+                            <span class="text-sm font-bold text-primary-glow" id="diesel-val">₹0</span>
+                        </div>
+                        <input type="range" id="diesel_tax" min="0" max="20" step="0.5" value="0">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-sm text-slate-300">Subsidy</label>
+                            <span class="text-sm font-bold text-accent-glow" id="subsidy-val">0%</span>
+                        </div>
+                        <input type="range" id="subsidy_percent" min="0" max="50" step="1" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Market Settings -->
+            <div
+                class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col h-80 relative overflow-hidden">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6">Market Conditions</h3>
+
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
+                        <span class="text-slate-200 font-medium">Export Ban</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="export_ban" class="sr-only peer">
+                            <div
+                                class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500">
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-sm text-slate-300">Panic Index (Volatility)</label>
+                            <span class="text-sm font-bold text-orange-400" id="panic-val">0</span>
+                        </div>
+                        <input type="range" id="volatility_slider" min="0" max="10" step="1" value="0">
+                    </div>
+
+                    <div class="mt-auto p-4 bg-white/5 rounded-xl border border-white/5">
+                        <div class="text-xs text-slate-400 mb-1">Current State</div>
+                        <div class="text-sm font-medium text-emerald-400" id="market-state">Normal Constraints</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </form>
+        </div>
+
+        <!-- Blockchain Section -->
+        <div class="mt-8 glass-card rounded-2xl p-8 border border-white/5 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+
+            <h4
+                class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 border-b border-white/5 pb-4 flex items-center gap-2">
+                <span class="material-icons-round text-primary">link</span> Blockchain Verification
+            </h4>
+
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-white/10 shadow-lg">
+                        <img src="https://cryptologos.cc/logos/polygon-matic-logo.png" class="w-6 h-6 opacity-80"
+                            alt="Polygon">
+                    </div>
+                    <div>
+                        <div class="text-slate-400 text-xs mb-1">Transaction Hash (Polygon POS)</div>
+                        <code id="tx-hash"
+                            class="text-primary-glow font-mono text-xs md:text-sm bg-black/20 px-3 py-1 rounded border border-white/5">Waiting for transaction...</code>
+                    </div>
+                </div>
+
+                <button class="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1 group">
+                    Verify on Explorer
+                    <span
+                        class="material-icons-round text-base group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/script.js?v=3"></script>
+</body>
+
+</html>
