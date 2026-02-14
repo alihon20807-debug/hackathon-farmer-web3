@@ -22,22 +22,15 @@ transport_df = None
 actuals_map = {} # Date -> Price
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'Daily Mandi Prices') 
-TRANSPORT_CSV_PATH = os.path.join(BASE_DIR, "commodity_transport_costs.csv")
+TRANSPORT_CSV_PATH = os.path.join(BASE_DIR, "..", "commodity_transport_costs.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "onion_prophet_model.json")
 
 # Initialize FastAPI
 app = FastAPI(title="Agri-Oracle Backend")
 
-# Mount Frontend
-# We need to find the absolute path to the frontend directory
+# Frontend directory path
 # Since main.py is in forecasting_engine/, frontend is in ../frontend
 FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
-
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
-@app.get("/")
-async def read_index():
-    return FileResponse(os.path.join(FRONTEND_DIR, 'index.html'))
 
 # CORS Middleware
 app.add_middleware(
@@ -311,7 +304,9 @@ async def predict_price(policy: PolicyInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Mount frontend LAST (catch-all) so API routes take priority
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="static")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
-

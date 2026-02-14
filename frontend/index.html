@@ -6,6 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Agri-Oracle | Liquid Glass Forecast</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -142,172 +143,470 @@
             </div>
             <span class="font-semibold text-lg tracking-tight text-white drop-shadow-md">Agri-Oracle</span>
         </div>
-        <div class="flex items-center gap-4">
-            <span class="text-sm text-slate-400" id="status-message">System Online</span>
-            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-glow-accent dot"></div>
+        <div class="flex items-center gap-8">
+            <div class="flex items-center gap-6 text-sm font-medium">
+                <button id="nav-oracle" class="text-white border-b-2 border-primary pb-1 transition-all">Oracle</button>
+                <button id="nav-planner" class="text-slate-400 hover:text-white pb-1 transition-all">Planner</button>
+                <button id="nav-wallet" class="text-slate-400 hover:text-white pb-1 transition-all">Wallet</button>
+            </div>
+            <div class="h-6 w-[1px] bg-white/10"></div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs text-slate-400" id="status-message">System Online</span>
+                <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-glow-accent dot"></div>
+            </div>
         </div>
     </nav>
 
     <main class="flex-grow container mx-auto px-4 py-12 max-w-7xl relative z-10">
-        <header class="mb-12 text-center md:text-left flex flex-col md:flex-row justify-between items-end gap-4">
-            <div>
-                <div
-                    class="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary-glow text-xs font-medium mb-4 backdrop-blur-sm shadow-inner-light">
-                    <span class="material-icons-round text-sm mr-1">today</span> Forecast Reference: <span
-                        id="prediction-date-display" class="ml-1">--</span>
-                </div>
-                <h1
-                    class="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-400 mb-2 drop-shadow-lg">
-                    Onion Price Oracle
-                </h1>
-                <p class="text-slate-400 text-lg max-w-2xl font-light">
-                    Real-time policy impact simulation and blockchain-verified forecasting.
-                </p>
-            </div>
-
-            <!-- Controls Form wrapper -->
-            <form id="simulation-form" class="contents">
-                <div class="glass-card rounded-xl p-4 flex flex-row items-end gap-4 overflow-visible">
-                    <!-- Date Input Group -->
-                    <div class="shrink-0">
-                        <label class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Reference Date</label>
-                        <input type="date" id="prediction_date"
-                            class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-primary/50 outline-none block w-40 shadow-inner-light h-[38px]">
-                    </div>
-
-                    <!-- Quick Selects -->
-                    <div class="flex items-center gap-2">
-                        <button type="button" data-period="tomorrow"
-                            class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
-                            +1 Day
-                        </button>
-                        <button type="button" data-period="next_week"
-                            class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
-                            +1 Week
-                        </button>
-                        <button type="button" data-period="next_month"
-                            class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
-                            +1 Month
-                        </button>
-                    </div>
-
-                    <div class="md:grow"></div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex items-center gap-2 ml-auto md:ml-0">
-                        <button type="button" id="lock-benchmark-btn"
-                            class="bg-white/5 hover:bg-white/10 text-slate-300 px-4 py-2 rounded-lg font-medium transition-all border border-white/10 flex items-center gap-2 text-xs whitespace-nowrap h-[38px] shadow-sm">
-                            <span class="material-icons-round text-sm">lock_open</span> Lock vs
-                        </button>
-                        <button type="submit"
-                            class="bg-primary hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-glow-primary flex items-center gap-2 whitespace-nowrap h-[38px]">
-                            <span class="material-icons-round text-sm">refresh</span> Simulate
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-8">
-            <!-- Card 1: Forecast Result -->
-            <div
-                class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col justify-between h-80 relative overflow-hidden">
-                <div
-                    class="absolute -top-20 -left-20 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700">
-                </div>
-                <div class="absolute top-0 right-0 p-4 opacity-50">
-                    <span id="trend-arrow" class="material-icons-round text-4xl text-white/10">trending_up</span>
-                </div>
-
+        <!-- View: Oracle -->
+        <div id="view-oracle" class="view-section">
+            <header class="mb-12 text-center md:text-left flex flex-col md:flex-row justify-between items-end gap-4">
                 <div>
-                    <h3 class="text-slate-400 text-sm font-medium uppercase tracking-widest mb-1">Predicted Price</h3>
-                    <div class="text-5xl font-bold text-white mb-2 flex items-baseline gap-2">
-                        ₹<span id="final-price">--</span>
+                    <div
+                        class="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary-glow text-xs font-medium mb-4 backdrop-blur-sm shadow-inner-light">
+                        <span class="material-icons-round text-sm mr-1">today</span> Forecast Reference: <span
+                            id="prediction-date-display" class="ml-1">--</span>
                     </div>
-
-                    <!-- Comparison Display (Hidden by default) -->
-                    <div id="comparison-display"
-                        class="hidden items-center gap-2 text-sm mb-4 bg-white/5 p-2 rounded-lg border border-white/5 w-fit">
-                        <span class="text-slate-400">vs Locked:</span>
-                        <span id="comp-delta-price" class="font-bold">--</span>
-                        <span id="comp-delta-pct" class="text-xs opacity-80">--</span>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 class="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-400 drop-shadow-lg"
+                            id="crop-title">
+                            Onion Price Oracle
+                        </h1>
+                        <div class="relative mt-2">
+                            <select id="crop-selector"
+                                class="bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1 text-sm text-primary-glow focus:ring-2 focus:ring-primary/50 outline-none cursor-pointer hover:bg-slate-800/80 transition-all appearance-none pr-8 shadow-inner-light bg-none">
+                                <option value="Onion" class="bg-slate-900 text-white" selected>Onion</option>
+                                <option value="Tomato" class="bg-slate-900 text-white">Tomato</option>
+                                <option value="Potato" class="bg-slate-900 text-white">Potato</option>
+                                <option value="Rice" class="bg-slate-900 text-white">Rice</option>
+                                <option value="Wheat" class="bg-slate-900 text-white">Wheat</option>
+                            </select>
+                            <span
+                                class="material-icons-round absolute right-2 top-1/2 -translate-y-1/2 text-sm pointer-events-none text-primary-glow/60">expand_more</span>
+                        </div>
                     </div>
-
-                    <div class="flex items-center gap-2 mb-1">
-                        <div id="status-dot"
-                            class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                        <span id="market-state" class="text-sm font-medium text-emerald-400">Stable Market</span>
-                    </div>
-                </div>
-                <div class="mt-4 flex items-center gap-2 text-sm text-slate-400">
-                    <span>Baseline: ₹<span id="baseline-price">--.--</span></span>
-                </div>
-
-                <div class="mt-auto border-t border-white/10 pt-4">
-                    <p id="confidence-display"
-                        class="text-sm text-slate-300 leading-relaxed font-light flex items-center gap-2">
-                        <span class="material-icons-round text-emerald-400">verified_user</span>
-                        Confidence Interval: 95%
+                    <p class="text-slate-400 text-lg max-w-2xl font-light">
+                        Real-time policy impact simulation and blockchain-verified forecasting.
                     </p>
                 </div>
-            </div>
 
-            <!-- Card 2: Policy Controls -->
-            <div
-                class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col h-80 relative overflow-hidden">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6">Policy Adjustments</h3>
-
-                <div class="space-y-6 relative z-10">
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-sm text-slate-300">Diesel Tax</label>
-                            <span class="text-sm font-bold text-primary-glow" id="diesel-val">₹0</span>
+                <!-- Controls Form wrapper -->
+                <form id="simulation-form" class="contents">
+                    <div class="glass-card rounded-xl p-4 flex flex-row items-end gap-4 overflow-visible">
+                        <!-- Date Input Group -->
+                        <div class="shrink-0">
+                            <label class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Reference
+                                Date</label>
+                            <input type="date" id="prediction_date"
+                                class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-primary/50 outline-none block w-40 shadow-inner-light h-[38px]">
                         </div>
-                        <input type="range" id="diesel_tax" min="0" max="20" step="0.5" value="0">
+
+                        <!-- Quick Selects -->
+                        <div class="flex items-center gap-2">
+                            <button type="button" data-period="tomorrow"
+                                class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
+                                +1 Day
+                            </button>
+                            <button type="button" data-period="next_week"
+                                class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
+                                +1 Week
+                            </button>
+                            <button type="button" data-period="next_month"
+                                class="quick-select px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-all whitespace-nowrap h-[38px] flex items-center shadow-sm">
+                                +1 Month
+                            </button>
+                        </div>
+
+                        <div class="md:grow"></div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center gap-2 ml-auto md:ml-0">
+                            <button type="button" id="lock-benchmark-btn"
+                                class="bg-white/5 hover:bg-white/10 text-slate-300 px-4 py-2 rounded-lg font-medium transition-all border border-white/10 flex items-center gap-2 text-xs whitespace-nowrap h-[38px] shadow-sm">
+                                <span class="material-icons-round text-sm">lock_open</span> Lock vs
+                            </button>
+                            <button type="submit"
+                                class="bg-primary hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-glow-primary flex items-center gap-2 whitespace-nowrap h-[38px]">
+                                <span class="material-icons-round text-sm">refresh</span> Simulate
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-8">
+                <!-- Card 1: Forecast Result -->
+                <div
+                    class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col justify-between h-80 relative overflow-hidden">
+                    <div
+                        class="absolute -top-20 -left-20 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700">
+                    </div>
+                    <div class="absolute top-0 right-0 p-4 opacity-50">
+                        <span id="trend-arrow" class="material-icons-round text-4xl text-white/10">trending_up</span>
                     </div>
 
                     <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-sm text-slate-300">Subsidy</label>
-                            <span class="text-sm font-bold text-accent-glow" id="subsidy-val">0%</span>
+                        <h3 class="text-slate-400 text-sm font-medium uppercase tracking-widest mb-1">Predicted Price
+                        </h3>
+                        <div class="text-5xl font-bold text-white mb-2 flex items-baseline gap-2">
+                            ₹<span id="final-price">--</span>
                         </div>
-                        <input type="range" id="subsidy_percent" min="0" max="50" step="1" value="0">
+
+                        <!-- Comparison Display (Hidden by default) -->
+                        <div id="comparison-display"
+                            class="hidden items-center gap-2 text-sm mb-4 bg-white/5 p-2 rounded-lg border border-white/5 w-fit">
+                            <span class="text-slate-400">vs Locked:</span>
+                            <span id="comp-delta-price" class="font-bold">--</span>
+                            <span id="comp-delta-pct" class="text-xs opacity-80">--</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-1">
+                            <div id="status-dot"
+                                class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                            </div>
+                            <span id="market-state" class="text-sm font-medium text-emerald-400">Stable Market</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center gap-2 text-sm text-slate-400">
+                        <span>Baseline: ₹<span id="baseline-price">--.--</span></span>
+                    </div>
+
+                    <div class="mt-auto border-t border-white/10 pt-4">
+                        <p id="confidence-display"
+                            class="text-sm text-slate-300 leading-relaxed font-light flex items-center gap-2">
+                            <span class="material-icons-round text-emerald-400">verified_user</span>
+                            Confidence Interval: 95%
+                        </p>
                     </div>
                 </div>
-            </div>
 
-            <!-- Card 3: Market Settings -->
-            <div
-                class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col h-80 relative overflow-hidden">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6">Market Conditions</h3>
+                <!-- Card 2: Policy Controls -->
+                <div
+                    class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col h-80 relative overflow-hidden">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6">Policy Adjustments
+                    </h3>
 
-                <div class="relative z-10 flex flex-col h-full">
-                    <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
-                        <span class="text-slate-200 font-medium">Export Ban</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="export_ban" class="sr-only peer">
-                            <div
-                                class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500">
+                    <div class="space-y-6 relative z-10">
+                        <div>
+                            <div class="flex justify-between mb-2 pointer-events-none">
+                                <label class="text-sm text-slate-300">Diesel Tax</label>
+                                <span class="text-sm font-bold text-primary-glow" id="diesel-val">₹0</span>
                             </div>
-                        </label>
-                    </div>
-
-                    <div class="mb-6">
-                        <div class="flex justify-between mb-2">
-                            <label class="text-sm text-slate-300">Panic Index (Volatility)</label>
-                            <span class="text-sm font-bold text-orange-400" id="panic-val">0</span>
+                            <input type="range" id="diesel_tax" min="0" max="20" step="0.5" value="0"
+                                class="relative z-20">
                         </div>
-                        <input type="range" id="volatility_slider" min="0" max="10" step="1" value="0">
-                    </div>
 
-                    <div class="mt-auto p-4 bg-white/5 rounded-xl border border-white/5">
-                        <div class="text-xs text-slate-400 mb-1">Current State</div>
-                        <div class="text-sm font-medium text-emerald-400" id="market-state">Normal Constraints</div>
+                        <div>
+                            <div class="flex justify-between mb-2 pointer-events-none">
+                                <label class="text-sm text-slate-300">Subsidy</label>
+                                <span class="text-sm font-bold text-accent-glow" id="subsidy-val">0%</span>
+                            </div>
+                            <input type="range" id="subsidy_percent" min="0" max="50" step="1" value="0"
+                                class="relative z-20">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Market Settings -->
+                <div
+                    class="group glass-card rounded-2xl p-6 transition-all duration-500 flex flex-col h-80 relative overflow-hidden">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6">Market Conditions</h3>
+
+                    <div class="relative z-10 flex flex-col h-full">
+                        <div
+                            class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
+                            <span class="text-slate-200 font-medium">Export Ban</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="export_ban" class="sr-only peer">
+                                <div
+                                    class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500">
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="flex justify-between mb-2">
+                                <label class="text-sm text-slate-300">Panic Index (Volatility)</label>
+                                <span class="text-sm font-bold text-orange-400" id="panic-val">0</span>
+                            </div>
+                            <input type="range" id="volatility_slider" min="0" max="10" step="1" value="0">
+                        </div>
+
+                        <div class="mt-auto p-4 bg-white/5 rounded-xl border border-white/5">
+                            <div class="text-xs text-slate-400 mb-1">Current State</div>
+                            <div class="text-sm font-medium text-emerald-400" id="market-state-card">Normal Constraints
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        </form>
+
+        <!-- View: Planner -->
+        <div id="view-planner" class="view-section hidden">
+            <header class="mb-12 text-center md:text-left flex flex-col md:flex-row justify-between items-end gap-6">
+                <div>
+                    <h1
+                        class="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-400 mb-2 drop-shadow-lg">
+                        Crop Rotation Planner
+                    </h1>
+                    <p class="text-slate-400 text-lg max-w-2xl font-light">
+                        Smarter planting for soil health and maximized profitability.
+                    </p>
+                </div>
+
+                <div class="flex bg-white/5 p-1 rounded-xl border border-white/10 backdrop-blur-sm">
+                    <button id="tab-rotation"
+                        class="px-6 py-2 rounded-lg text-sm font-bold transition-all bg-primary text-white shadow-glow-primary">Rotation
+                        Plan</button>
+                    <button id="tab-simple"
+                        class="px-6 py-2 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white">Quick
+                        Suggest</button>
+                </div>
+            </header>
+
+            <!-- Planner Content: Rotation -->
+            <div id="planner-rotation" class="planner-sub-section">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Planner Tools -->
+                    <div class="glass-card rounded-2xl p-8 border border-white/5">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6">Planning
+                            Parameters</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-sm text-slate-300 block mb-2">Previous Crop</label>
+                                <div class="relative">
+                                    <select
+                                        class="w-full bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-primary/50 outline-none appearance-none pr-10 shadow-inner-light bg-none cursor-pointer hover:bg-slate-800/80 transition-all">
+                                        <option class="bg-slate-900 text-white">None / Fallow</option>
+                                        <option class="bg-slate-900 text-white">Onion</option>
+                                        <option class="bg-slate-900 text-white">Potato</option>
+                                        <option class="bg-slate-900 text-white">Wheat</option>
+                                    </select>
+                                    <span
+                                        class="material-icons-round absolute right-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none text-slate-400">expand_more</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-sm text-slate-300 block mb-2">Soil Type</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button
+                                        class="px-4 py-3 rounded-xl bg-primary text-white text-sm font-medium border border-primary shadow-glow-primary">Clay</button>
+                                    <button
+                                        class="px-4 py-3 rounded-xl bg-white/5 text-slate-400 text-sm font-medium border border-white/10 hover:bg-white/10 transition-all">Sandy</button>
+                                    <button
+                                        class="px-4 py-3 rounded-xl bg-white/5 text-slate-400 text-sm font-medium border border-white/10 hover:bg-white/10 transition-all">Loamy</button>
+                                    <button
+                                        class="px-4 py-3 rounded-xl bg-white/5 text-slate-400 text-sm font-medium border border-white/10 hover:bg-white/10 transition-all">Silt</button>
+                                </div>
+                            </div>
+                            <button
+                                class="w-full bg-gradient-to-r from-primary to-blue-600 hover:scale-[1.02] active:scale-[0.98] text-white py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+                                <span class="material-icons-round">auto_fix_high</span> Generate Optimal Rotation
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Rotation Dashboard -->
+                    <div class="glass-card rounded-2xl p-8 border border-white/5 relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl"></div>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-accent-glow mb-6">AI Recommendations
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div class="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+                                    <span class="material-icons-round">eco</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white">Tomato (Phase 1)</h4>
+                                    <p class="text-xs text-slate-400">Optimal nitrogen recovery cycle.</p>
+                                </div>
+                                <div class="ml-auto text-right">
+                                    <div class="text-emerald-400 font-bold">94%</div>
+                                    <div class="text-[10px] text-slate-500 uppercase tracking-tighter">Match</div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center gap-4 opacity-50">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 border border-blue-500/30">
+                                    <span class="material-icons-round">water_drop</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white">Rice (Phase 2)</h4>
+                                    <p class="text-xs text-slate-400">Post-monsoon sequence.</p>
+                                </div>
+                                <div class="ml-auto text-right">
+                                    <div class="text-blue-400 font-bold">81%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-8 border-t border-white/5">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-sm text-slate-400">Soil Health Index</span>
+                                <span class="text-sm font-bold text-emerald-400">Good (7.8/10)</span>
+                            </div>
+                            <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                                <div class="bg-emerald-500 h-full w-[78%] shadow-glow-accent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planner Content: Simple -->
+            <div id="planner-simple" class="planner-sub-section hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <!-- Input Card -->
+                    <div class="glass-card rounded-2xl p-8 border border-white/5 md:col-span-1">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-primary-glow mb-6">Quick Filters
+                        </h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-sm text-slate-300 block mb-2">Wait Duration</label>
+                                <div class="relative">
+                                    <select id="simple-wait-time"
+                                        class="w-full bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-primary/50 outline-none appearance-none pr-10 shadow-inner-light bg-none cursor-pointer hover:bg-slate-800/80 transition-all">
+                                        <option value="Short" class="bg-slate-900 text-white">Short Term (< 3
+                                                Months)</option>
+                                        <option value="Medium" class="bg-slate-900 text-white" selected>Medium Term (3-6
+                                            Months)</option>
+                                        <option value="Long" class="bg-slate-900 text-white">Long Term (> 6 Months)
+                                        </option>
+                                    </select>
+                                    <span
+                                        class="material-icons-round absolute right-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none text-slate-400">expand_more</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-sm text-slate-300 block mb-2">Priority</label>
+                                <div class="flex flex-col gap-2">
+                                    <label
+                                        class="flex items-center gap-2 text-sm text-slate-400 cursor-pointer hover:text-white transition-colors">
+                                        <input type="radio" name="priority" value="Profit" checked
+                                            class="accent-primary"> Profit Maximization
+                                    </label>
+                                    <label
+                                        class="flex items-center gap-2 text-sm text-slate-400 cursor-pointer hover:text-white transition-colors">
+                                        <input type="radio" name="priority" value="Stability" class="accent-primary">
+                                        Market Stability
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Card -->
+                    <div
+                        class="glass-card rounded-2xl p-8 border border-white/5 md:col-span-2 relative overflow-hidden">
+                        <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+                        <h3
+                            class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                            <span class="material-icons-round text-primary text-sm">lightbulb</span> Top Suggestion
+                        </h3>
+
+                        <div class="flex flex-col md:flex-row gap-8 items-center">
+                            <div
+                                class="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary/20 to-blue-500/20 border border-white/10 flex items-center justify-center">
+                                <span class="material-icons-round text-6xl text-primary-glow">inventory_2</span>
+                            </div>
+                            <div class="grow text-center md:text-left">
+                                <div class="text-4xl font-bold text-white mb-2" id="simple-crop-result">Potato (Hybrid)
+                                </div>
+                                <p class="text-slate-400 mb-4">Highest predicted demand for the upcoming <span
+                                        id="simple-wait-display">Medium Term</span> window.</p>
+                                <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                                    <div
+                                        class="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/20">
+                                        Revenue: +28%</div>
+                                    <div
+                                        class="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-xs font-bold border border-blue-500/20">
+                                        Risk: Low</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-12 p-6 bg-white/5 rounded-2xl border border-white/5">
+                            <h4 class="text-xs font-bold uppercase text-slate-500 mb-4">Why this crop?</h4>
+                            <p class="text-sm text-slate-300 leading-relaxed italic">
+                                "Current market trends show a supply gap for processing-grade potatoes in the next
+                                quarter. Soil moisture levels are currently optimal for tuber development."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Wallet -->
+        <div id="view-wallet" class="view-section hidden">
+            <header class="mb-12 text-center md:text-left">
+                <h1
+                    class="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-400 mb-2 drop-shadow-lg">
+                    Farmer Portal
+                </h1>
+                <p class="text-slate-400 text-lg max-w-2xl font-light">
+                    Authenticate crop data and update your blockchain credentials.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Photo Upload -->
+                <div class="glass-card rounded-2xl p-8 border border-white/5 flex flex-col items-center justify-center text-center min-h-[400px] group cursor-pointer border-dashed border-2 hover:border-primary/50 transition-all"
+                    id="drop-zone">
+                    <input type="file" id="file-input" class="hidden">
+                    <div
+                        class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-primary/20 transition-all">
+                        <span
+                            class="material-icons-round text-3xl text-slate-400 group-hover:text-primary-glow">cloud_upload</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Upload Crop Image</h3>
+                    <p class="text-sm text-slate-500 mb-6">Drag and drop or click to upload JPEG / PNG</p>
+                    <div id="upload-status" class="hidden text-sm font-bold text-emerald-400 flex items-center gap-2">
+                        <span class="material-icons-round text-base">check_circle</span> Photo Uploaded Successfully
+                    </div>
+                </div>
+
+                <!-- Wallet Settings -->
+                <div class="glass-card rounded-2xl p-8 border border-white/5">
+                    <h3
+                        class="text-xs font-bold uppercase tracking-widest text-blue-200/60 mb-6 flex items-center gap-2">
+                        <span class="material-icons-round text-sm">account_balance_wallet</span> Wallet Configuration
+                    </h3>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-sm text-slate-300 block mb-2">Ethereum Wallet Address</label>
+                            <input type="text" id="wallet-address" placeholder="0x..."
+                                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-mono text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all">
+                        </div>
+                        <button id="save-wallet-btn"
+                            class="w-full bg-primary hover:bg-blue-600 text-white py-4 rounded-xl font-bold shadow-glow-primary transition-all flex items-center justify-center gap-2">
+                            Update Security Protocol
+                        </button>
+                        <div id="wallet-status"
+                            class="hidden p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm font-medium flex items-center gap-2">
+                            <span class="material-icons-round text-base">verified</span> Wallet credentials updated
+                            successfully
+                        </div>
+                    </div>
+
+                    <div class="mt-12 p-6 bg-slate-900/50 rounded-2xl border border-white/5">
+                        <div class="flex items-center gap-4 mb-4 text-slate-400">
+                            <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png"
+                                class="w-6 h-6 grayscale opacity-40" alt="ETH">
+                            <span class="text-xs font-bold uppercase tracking-widest">Network Status: Secured</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed font-light">
+                            Your biometric crop data is hashed and stored on the Ethereum L2 network for agricultural
+                            subsidy eligibility.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Blockchain Section -->
@@ -341,6 +640,124 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal: Interactive Graph -->
+    <div id="modal-graph" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" id="close-modal-graph"></div>
+        <div
+            class="glass-card w-full max-w-4xl rounded-3xl p-8 relative z-10 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span class="material-icons-round text-primary-glow">show_chart</span>
+                        <span id="modal-crop-name">Onion</span> Prediction Intelligence
+                    </h2>
+                    <p class="text-slate-400 text-sm">30-day ensemble forecast projection</p>
+                </div>
+                <button
+                    class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-white/10 transition-all"
+                    id="btn-close-graph">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+
+            <div class="h-[400px] w-full bg-slate-900/50 rounded-2xl p-4 border border-white/5 relative">
+                <canvas id="predictionChart"></canvas>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mt-8">
+                <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <div class="text-xs text-slate-500 uppercase tracking-widest mb-1">Model Confidence</div>
+                    <div class="text-xl font-bold text-emerald-400">High (89%)</div>
+                </div>
+                <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <div class="text-xs text-slate-500 uppercase tracking-widest mb-1">Market Volatility</div>
+                    <div class="text-xl font-bold text-white">Low</div>
+                </div>
+                <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <div class="text-xs text-slate-500 uppercase tracking-widest mb-1">Data Recency</div>
+                    <div class="text-xl font-bold text-blue-400">Real-time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Disaster Prediction -->
+    <div id="modal-disaster" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" id="close-modal-disaster"></div>
+        <div
+            class="glass-card w-full max-w-md rounded-3xl p-8 relative z-10 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                    <span class="material-icons-round text-rose-500">radar</span> Risk Radar
+                </h2>
+                <button
+                    class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-white/10 transition-all"
+                    id="btn-close-disaster">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+
+            <div class="space-y-8">
+                <!-- Flood Risk -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300 font-medium flex items-center gap-2">
+                            <span class="material-icons-round text-blue-400">water</span> Flood Probability
+                        </span>
+                        <span class="text-sm font-bold text-blue-400">12%</span>
+                    </div>
+                    <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="bg-blue-400 h-full w-[12%] shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
+                    </div>
+                </div>
+
+                <!-- Drought Risk -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300 font-medium flex items-center gap-2">
+                            <span class="material-icons-round text-orange-400">wb_sunny</span> Drought Risk
+                        </span>
+                        <span class="text-sm font-bold text-orange-400">64%</span>
+                    </div>
+                    <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="bg-orange-400 h-full w-[64%] shadow-[0_0_10px_rgba(251,146,60,0.5)] animate-pulse">
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-orange-400/80 uppercase font-bold tracking-widest italic pt-1">Attention:
+                        Severe heatwave conditions predicted for Week 3</p>
+                </div>
+
+                <!-- Cyclone Risk -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300 font-medium flex items-center gap-2">
+                            <span class="material-icons-round text-slate-400">cyclone</span> Storm Activity
+                        </span>
+                        <span class="text-sm font-bold text-slate-400">0%</span>
+                    </div>
+                    <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="bg-slate-400 h-full w-[0%]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="mt-10 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs text-center leading-relaxed">
+                <strong>Precautionary Alert:</strong> Based on current humidity-to-temp ratios, we suggest staggering
+                your next sowing window by 4 days to avoid the predicted heat spike.
+            </div>
+        </div>
+    </div>
+
+    <!-- Disaster Predict Button (Float) -->
+    <button id="btn-open-disaster"
+        class="fixed bottom-8 right-8 z-[90] w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 hover:scale-110 active:scale-95 text-white shadow-2xl transition-all flex items-center justify-center group">
+        <span class="material-icons-round text-3xl group-hover:rotate-12 transition-transform">radar</span>
+        <div
+            class="absolute right-full mr-4 px-3 py-1 bg-rose-600 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+            Check Disaster Risk</div>
+    </button>
 
     <script src="script.js?v=3"></script>
 </body>
