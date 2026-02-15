@@ -105,13 +105,30 @@ def trigger_farmer_payment(farmer_wallet, amount_in_wei):
 
     # Sign and send
     signed_txn = w3.eth.account.sign_transaction(payment_txn, private_key=PRIVATE_KEY)
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # Step D: Send it to the blockchain!
+    try:
+        # 1st Attempt: Newest Web3 v6+ syntax (Johan's laptop)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+        
+    except AttributeError:
+        # 2nd Attempt: Hybrid syntax (Your laptop)
+        try:
+            tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+            
+        except AttributeError:
+            # 3rd Attempt: Oldest Web3 v5 syntax (Strict camelCase)
+            tx_hash = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
     
     print(f"Transaction broadcasted! Hash: {tx_hash.hex()}")
     
     # Wait for confirmation
-    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-    print(f"✅ Payment successfully confirmed in Block #{receipt.blockNumber}!")
+    try:
+        # This works for newer Web3 versions (Web3 v6+)
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    except AttributeError:
+        # This works for older Web3 versions (Web3 v5)
+        receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+    print(f"Payment successfully confirmed in Block #{receipt.blockNumber}!")
     return True
 
 # Quick test if you run this file directly
