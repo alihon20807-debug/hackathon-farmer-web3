@@ -1,0 +1,5 @@
+MODEL EVALUATION RESULTS (Refactored)
+Parameters: {'seasonality_mode': 'multiplicative', 'changepoint_prior_scale': 0.5, 'seasonality_prior_scale': 10.0}
+Test MAPE: 20.29%
+CV MAPE: 0.00%
+Directional Accuracy: 57.02%

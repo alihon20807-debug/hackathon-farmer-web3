@@ -1,0 +1,4 @@
+Dedicated Monthly Model Results
+Test Period: Last 6 Months
+MAPE: 13.42%
+Directional Accuracy: 66.67%

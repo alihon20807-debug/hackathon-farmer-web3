@@ -1,0 +1,12 @@
+{
+  "commodity": "Onion",
+  "baseline_prediction": 1508.18,
+  "final_adjusted_price": 1603.09,
+  "confidence_lower": 0.0,
+  "confidence_upper": 4294.78,
+  "confidence_score": 35.0,
+  "real_value": null,
+  "status_message": "Normal Market Conditions",
+  "polygon_tx_hash": "0x475a9905f8f516e3519caf8621f81debbe28a7a1dc42d75b18ae86d7a351fb47",
+  "prediction_date": "2026-02-15"
+}

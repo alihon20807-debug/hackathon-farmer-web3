@@ -13,16 +13,18 @@ import random
 # Global variables
 # Global variables
 try:
-    from .lstm_engine import get_lstm_forecast
+    from .lstm_engine import get_lstm_forecast, get_lstm_direction_signal
 except ImportError:
-    from lstm_engine import get_lstm_forecast
+    from lstm_engine import get_lstm_forecast, get_lstm_direction_signal
 
 model = None
 transport_df = None
+ndvi_df = None  # NDVI satellite data
 actuals_map = {} # Date -> Price
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'Daily Mandi Prices') 
 TRANSPORT_CSV_PATH = os.path.join(BASE_DIR, "commodity_transport_costs.csv")
+NDVI_CSV_PATH = os.path.join(BASE_DIR, "ndvi_weekly_nashik.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "onion_prophet_model.json")
 
 # Initialize FastAPI
@@ -52,7 +54,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def load_resources():
-    global model, transport_df, actuals_map
+    global model, transport_df, ndvi_df, actuals_map
     try:
         # Load Model
         if os.path.exists(MODEL_PATH):
@@ -73,6 +75,16 @@ async def load_resources():
             print("Transport cost data loaded.")
         else:
             print(f"Warning: {TRANSPORT_CSV_PATH} not found.")
+
+        # Load NDVI satellite data
+        if os.path.exists(NDVI_CSV_PATH):
+            print(f"Loading NDVI data from {NDVI_CSV_PATH}...")
+            ndvi_df = pd.read_csv(NDVI_CSV_PATH)
+            ndvi_df['ds'] = pd.to_datetime(ndvi_df['ds'])
+            ndvi_df = ndvi_df.sort_values('ds')
+            print(f"NDVI data loaded: {len(ndvi_df)} weekly entries.")
+        else:
+            print(f"Warning: {NDVI_CSV_PATH} not found. NDVI features will be zero.")
 
     except Exception as e:
         print(f"Error loading resources: {e}")
@@ -193,9 +205,39 @@ async def predict_price(policy: PolicyInput):
 
         # 4. Panic Index
         future['panic_index'] = policy.volatility_slider
-        ref_future['panic_index'] = 0.0 # Reference date assumes normal conditions unless specified otherwise
+        ref_future['panic_index'] = 0.0
 
-            
+        ref_future['panic_index'] = 0.0
+
+        # ref_future['ndvi_anomaly'] = 0.0 # REMOVED
+
+
+        # 6. NDVI Satellite Data (Crop health)
+        if ndvi_df is not None and not ndvi_df.empty:
+            ndvi_lookup = ndvi_df.set_index('ds')
+            last_ndvi_mean = ndvi_df['ndvi_mean'].iloc[-1]
+            last_ndvi_anomaly = ndvi_df['ndvi_anomaly'].iloc[-1]
+
+            def get_ndvi_val(date, col, default):
+                try:
+                    val = ndvi_lookup[col].asof(date)
+                    return default if pd.isna(val) else float(val)
+                except Exception:
+                    return default
+
+            future['ndvi_mean'] = future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_mean', last_ndvi_mean))
+            future['ndvi_mean'] = future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_mean', last_ndvi_mean))
+            # future['ndvi_anomaly'] = future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_anomaly', last_ndvi_anomaly))
+            ref_future['ndvi_mean'] = ref_future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_mean', last_ndvi_mean))
+            # ref_future['ndvi_anomaly'] = ref_future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_anomaly', last_ndvi_anomaly))
+        else:
+            future['ndvi_mean'] = 0.0
+            # future['ndvi_anomaly'] = 0.0
+            ref_future['ndvi_mean'] = 0.0
+            # ref_future['ndvi_anomaly'] = 0.0
+
+
+
         forecast = model.predict(future)
         ref_forecast_df = model.predict(ref_future)
         
@@ -220,28 +262,91 @@ async def predict_price(policy: PolicyInput):
         else:
             ref_price = ref_row.iloc[0]['yhat']
         
-        # 2. Apply Policy Modifiers (to the Target Price)
-        # ENSEMBLE LOGIC
+        # ============================================================
+        # UNIFIED ENSEMBLE: Prophet (price) × LSTM (direction)
+        # ============================================================
+        # Prophet: Best at price magnitude (~10% MAPE, trend + seasonality)
+        # LSTM:    Best at direction (76% accuracy at high confidence)
+        #
+        # Strategy: Confidence-Adaptive Blend
+        #   - Low LSTM confidence  → Trust Prophet's full prediction
+        #   - High LSTM confidence → Trust Prophet's magnitude but LSTM's direction
+        # ============================================================
+        
+        # --- Step 1: Get LSTM Predictions ---
         lstm_forecasts = []
         try:
-            lstm_forecasts = get_lstm_forecast() # Returns list of 30 floats
-            # Use Day 1 for the main "price" display
+            lstm_forecasts = get_lstm_forecast()  # 30-day heuristic prices
             lstm_price_day1 = lstm_forecasts[0]
             lstm_price_day7 = lstm_forecasts[6]
             lstm_price_day30 = lstm_forecasts[29]
-            print(f"LSTM Forecast (Day 1): {lstm_price_day1}")
         except Exception as e:
-            print(f"LSTM Error: {e}")
-            # Fallback: fill with prophet price if LSTM fails
+            print(f"LSTM Price Error: {e}")
             lstm_price_day1 = raw_target_price
             lstm_price_day7 = raw_target_price
             lstm_price_day30 = raw_target_price
             lstm_forecasts = [raw_target_price] * 30
 
-        # Weighted Ensemble (70% Prophet, 30% LSTM) -> Using Day 1 for the main number
-        ensembled_price = (raw_target_price * 0.7) + (lstm_price_day1 * 0.3)
+        try:
+            direction_signal = get_lstm_direction_signal()
+            lstm_direction = direction_signal["direction"]
+            lstm_confidence = direction_signal["confidence_score"]
+            lstm_prob_up = direction_signal["probability_up"]
+        except Exception as e:
+            print(f"LSTM Direction Error: {e}")
+            lstm_direction = "NEUTRAL"
+            lstm_confidence = 0.0
+            lstm_prob_up = 0.5
+
+        # --- Step 2: Confidence-Adaptive Ensemble ---
+        # Prophet's predicted change from baseline
+        prophet_change = raw_target_price - ref_price
+        prophet_direction_up = prophet_change > 0
+        lstm_direction_up = (lstm_direction == "UP")
         
-        final_price = ensembled_price
+        # Blend weight: how much to trust LSTM's direction
+        # Below 0.30 confidence → 0% LSTM influence (Pure Prophet) - Ignored due to low accuracy (52%)
+        # Above 0.60 confidence → 100% LSTM influence (Full Override) - High accuracy (91%)
+        # Between → smooth ramp
+        CONF_FLOOR = 0.30   # Ignore noise (Low Confidence)
+        CONF_CEIL = 0.60    # Trust strong signals (Medium/High Confidence)
+        
+        if lstm_confidence <= CONF_FLOOR:
+            lstm_weight = 0.0
+        elif lstm_confidence >= CONF_CEIL:
+            lstm_weight = 1.0
+        else:
+            lstm_weight = (lstm_confidence - CONF_FLOOR) / (CONF_CEIL - CONF_FLOOR)
+        
+        prophet_weight = 1.0 - lstm_weight
+        
+        # Prophet's price contribution (always provides the magnitude)
+        prophet_magnitude = abs(prophet_change)
+        min_magnitude = ref_price * 0.005  # At least 0.5% move to avoid flat predictions
+        magnitude = max(prophet_magnitude, min_magnitude)
+        
+        if lstm_weight == 0:
+            # Pure Prophet
+            final_price = raw_target_price
+            blend_mode = "PROPHET_ONLY"
+        elif prophet_direction_up == lstm_direction_up:
+            # Both agree → amplify with confidence
+            boost = 1.0 + (lstm_weight * 0.15)  # Up to 15% amplification
+            final_price = ref_price + (prophet_change * boost)
+            blend_mode = f"AGREE_{lstm_direction}"
+        else:
+            # Disagree → blend directions smoothly
+            # Prophet's vote: its original change
+            # LSTM's vote: flip the magnitude to LSTM's direction
+            lstm_signed = magnitude if lstm_direction_up else -magnitude
+            prophet_signed = prophet_change
+            
+            blended_change = (prophet_signed * prophet_weight) + (lstm_signed * lstm_weight)
+            final_price = ref_price + blended_change
+            blend_mode = f"BLEND_{lstm_direction}_{lstm_weight:.0%}"
+        
+        print(f"Ensemble: Prophet={raw_target_price:.0f}, LSTM={lstm_direction}@{lstm_confidence:.2f}, "
+              f"Weight={lstm_weight:.2f}, Mode={blend_mode}, Final={final_price:.0f}")
         
         # Diesel Tax Impact
         final_price += (policy.diesel_tax * 15)
@@ -249,7 +354,16 @@ async def predict_price(policy: PolicyInput):
         # Export Ban Impact
         status_msg = "Normal Market Conditions"
         
-        # Check Volatility First (Overrides Normal)
+        # Enrich status with directional signal
+        if lstm_confidence >= CONF_CEIL:
+             if lstm_direction == "UP":
+                 status_msg = f"Strong Bullish Signal (LSTM Conf: {lstm_confidence:.0%})"
+             else:
+                 status_msg = f"Strong Bearish Signal (LSTM Conf: {lstm_confidence:.0%})"
+        elif lstm_confidence > CONF_FLOOR:
+             status_msg = f"Moderate Market Signal"
+        
+        # Check Volatility (Overrides Normal)
         if policy.volatility_slider > 7.0:
             status_msg = "CRITICAL: High Market Volatility Detected"
         elif policy.volatility_slider > 4.0:
@@ -305,7 +419,8 @@ async def predict_price(policy: PolicyInput):
                 "lstm_day30": round(lstm_price_day30, 2)
             },
             "debug_target_date": str(target_date),
-            "debug_future_tail": str(future['ds'].tail().tolist())
+            "debug_future_tail": str(future['ds'].tail().tolist()),
+            "lstm_direction": get_lstm_direction_signal() 
         }
         
     except Exception as e:
