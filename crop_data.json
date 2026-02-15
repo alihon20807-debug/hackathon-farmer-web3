@@ -1,0 +1,14 @@
+{
+  "tomatoes": {
+    "current_price_per_kg": 45,
+    "forecasted_price_next_week": 38,
+    "trend": "dropping rapidly",
+    "ai_advice": "Sell immediately before prices crash."
+  },
+  "rice": {
+    "current_price_per_kg": 60,
+    "forecasted_price_next_week": 65,
+    "trend": "rising steady",
+    "ai_advice": "Hold. Prices are expected to go up."
+  }
+}
