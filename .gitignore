@@ -42,7 +42,8 @@ lstm_output.txt
 metrics.txt
 *.log
 *.png
-*.pth
+# Note: .pth model weights are small and essential for runtime
+# They are NOT gitignored
 
 # OS / Editor
 .DS_Store
