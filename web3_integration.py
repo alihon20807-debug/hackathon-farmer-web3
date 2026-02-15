@@ -125,11 +125,18 @@ def secure_ai_forecast(date, market_data_dict):
     
     # Step D: Send it to the blockchain!
     print("Sending transaction to Sepolia...")
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+    
+    # --- Version-Agnostic Transaction Sending ---
+    try:
+        # This will work on laptops with (Web3 v6+)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+    except AttributeError:
+        # This will work on laptops with (Web3 v5)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
     
     # Wait for the block to be mined
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-    print(f"✅ Success! Data hash permanently secured in Block #{receipt.blockNumber}")
+    print(f"Success! Data hash permanently secured in Block #{receipt.blockNumber}")
     print(f"View on Etherscan: https://sepolia.etherscan.io/tx/{tx_hash.hex()}")
 
 # --- Example of How the AI/Data Team Will Use This ---
@@ -141,5 +148,4 @@ if __name__ == '__main__':
         "weather_factor": "Heavy Rain Warning"
     }
     
-
     secure_ai_forecast("2026-02-13", ai_prediction_output)
