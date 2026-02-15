@@ -1,12 +1,52 @@
-.venv/
+# Python
 __pycache__/
-*.pyc
-Agriculture_price_dataset.csv
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-server.log
-*.log
-
-*.csv
-metrics.txt
+# GeoTIFF / Satellite Data
 *.tif
+*.tiff
 NVDI satellite Onion/
+Rainfall/
+
+# Data Files
+Daily Mandi Prices/
+debug_output.txt
+lstm_output.txt
+metrics.txt
+*.log
+*.png
+*.pth
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+

@@ -7,10 +7,9 @@ from prophet.serialize import model_from_json
 import pandas as pd
 import os
 import random
+import traceback
+from typing import Optional
 
-
-
-# Global variables
 # Global variables
 try:
     from .lstm_engine import get_lstm_forecast, get_lstm_direction_signal
@@ -23,23 +22,15 @@ ndvi_df = None  # NDVI satellite data
 actuals_map = {} # Date -> Price
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'Daily Mandi Prices') 
-TRANSPORT_CSV_PATH = os.path.join(BASE_DIR, "commodity_transport_costs.csv")
+TRANSPORT_CSV_PATH = os.path.join(BASE_DIR, "..", "commodity_transport_costs.csv")
 NDVI_CSV_PATH = os.path.join(BASE_DIR, "ndvi_weekly_nashik.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "onion_prophet_model.json")
 
 # Initialize FastAPI
 app = FastAPI(title="Agri-Oracle Backend")
 
-# Mount Frontend
-# We need to find the absolute path to the frontend directory
-# Since main.py is in forecasting_engine/, frontend is in ../frontend
+# Frontend directory path
 FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
-
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
-@app.get("/")
-async def read_index():
-    return FileResponse(os.path.join(FRONTEND_DIR, 'index.html'))
 
 # CORS Middleware
 app.add_middleware(
@@ -49,8 +40,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 @app.on_event("startup")
 async def load_resources():
@@ -88,8 +77,6 @@ async def load_resources():
 
     except Exception as e:
         print(f"Error loading resources: {e}")
-
-from typing import Optional
 
 class PolicyInput(BaseModel):
     diesel_tax: float = 0.0
@@ -135,9 +122,6 @@ async def predict_price(policy: PolicyInput):
         print(f"Request: Ref={ref_date}, Target={target_date}") 
 
         # Future DataFrame for TARGET
-        # FIX: make_future_dataframe creates a sequence starting at history end.
-        # We need to ensure target_date is INCLUDED in the future dataframe.
-        
         if target_date <= last_history_date:
             # In-sample
             future = pd.DataFrame({'ds': [target_date]})
@@ -153,10 +137,6 @@ async def predict_price(policy: PolicyInput):
                 future = pd.concat([future, pd.DataFrame({'ds': [target_date]})], ignore_index=True)
                 future = future.sort_values('ds').reset_index(drop=True)
         
-        print(f"DEBUG: Future DS head: {future['ds'].head()}")
-        print(f"DEBUG: Future DS tail: {future['ds'].tail()}")
-        print(f"DEBUG: Target Date: {target_date}")
-
         # Future DataFrame for REFERENCE (Baseline)
         if ref_date <= last_history_date:
              ref_future = pd.DataFrame({'ds': [ref_date]})
@@ -184,20 +164,19 @@ async def predict_price(policy: PolicyInput):
                 except Exception:
                     return last_transport_val
 
-            future['transport_lag_3'] = future['ds'].apply(get_lagged_cost)
-            future['transport_lag_3'] = future['transport_lag_3'].fillna(last_transport_val)
-            
-            # Apply to Ref Future too
-            ref_future['transport_lag_3'] = ref_future['ds'].apply(get_lagged_cost)
-            ref_future['transport_lag_3'] = ref_future['transport_lag_3'].fillna(last_transport_val)
-
+            future['transport_lag_3'] = future['ds'].apply(get_lagged_cost).fillna(last_transport_val)
+            ref_future['transport_lag_3'] = ref_future['ds'].apply(get_lagged_cost).fillna(last_transport_val)
         else:
             future['transport_lag_3'] = 0
             ref_future['transport_lag_3'] = 0
 
-        # 2. National Average Price (Defaulting to recent avg for demo stability)
-        future['national_avg_price'] = 2500.0 
-        ref_future['national_avg_price'] = 2500.0
+        # 2. National Average Price (Dynamic default)
+        last_price = 5000.0 # Fallback
+        if hasattr(model, 'history') and model.history is not None:
+             last_price = model.history['y'].iloc[-1]
+             
+        future['national_avg_price'] = last_price
+        ref_future['national_avg_price'] = last_price
         
         # 3. Rainfall
         future['rainfall'] = 0.0
@@ -207,17 +186,11 @@ async def predict_price(policy: PolicyInput):
         future['panic_index'] = policy.volatility_slider
         ref_future['panic_index'] = 0.0
 
-        ref_future['panic_index'] = 0.0
-
-        # ref_future['ndvi_anomaly'] = 0.0 # REMOVED
-
-
-        # 6. NDVI Satellite Data (Crop health)
+        # 5. NDVI Satellite Data
         if ndvi_df is not None and not ndvi_df.empty:
             ndvi_lookup = ndvi_df.set_index('ds')
             last_ndvi_mean = ndvi_df['ndvi_mean'].iloc[-1]
-            last_ndvi_anomaly = ndvi_df['ndvi_anomaly'].iloc[-1]
-
+            
             def get_ndvi_val(date, col, default):
                 try:
                     val = ndvi_lookup[col].asof(date)
@@ -226,17 +199,80 @@ async def predict_price(policy: PolicyInput):
                     return default
 
             future['ndvi_mean'] = future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_mean', last_ndvi_mean))
-            future['ndvi_mean'] = future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_mean', last_ndvi_mean))
-            # future['ndvi_anomaly'] = future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_anomaly', last_ndvi_anomaly))
             ref_future['ndvi_mean'] = ref_future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_mean', last_ndvi_mean))
-            # ref_future['ndvi_anomaly'] = ref_future['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_anomaly', last_ndvi_anomaly))
         else:
             future['ndvi_mean'] = 0.0
-            # future['ndvi_anomaly'] = 0.0
             ref_future['ndvi_mean'] = 0.0
-            # ref_future['ndvi_anomaly'] = 0.0
 
+        # Generate 30-day forecast series for the chart
+        forecast_horizon = 30
+        future_trend = model.make_future_dataframe(periods=forecast_horizon)
+        
+        # Add regressors to future_trend
+        if transport_df is not None:
+             future_trend['transport_lag_3'] = future_trend['ds'].apply(get_lagged_cost).fillna(last_transport_val)
+        else:
+             future_trend['transport_lag_3'] = 0
 
+        future_trend['national_avg_price'] = last_price
+        future_trend['rainfall'] = 0.0
+        future_trend['panic_index'] = policy.volatility_slider
+        
+        if ndvi_df is not None and not ndvi_df.empty:
+            future_trend['ndvi_mean'] = future_trend['ds'].apply(lambda d: get_ndvi_val(d, 'ndvi_mean', last_ndvi_mean))
+        else:
+            future_trend['ndvi_mean'] = 0.0
+
+        forecast_trend_df = model.predict(future_trend)
+        
+        # Filter for "future" only (starting from ref_date)
+        # We want the chart to start from the reference date (Day 0) and go 30 days out
+        mask = forecast_trend_df['ds'] >= ref_date
+        trend_segment = forecast_trend_df.loc[mask].head(31) # Day 0 + 30 days
+        
+        # Prepare the series data
+        # Prepare the series data
+        forecast_series = []
+        for _, row in trend_segment.iterrows():
+            # Base price from model (in kg)
+            base_kg = row['yhat'] / 100.0
+            
+            # Apply Policy Adjustments to Series
+            # 1. Diesel Tax Impact (Additive)
+            diesel_impact = (policy.diesel_tax * 15) / 100.0
+            daily_price = base_kg + diesel_impact
+            
+            # 2. Export Ban (Multiplicative)
+            if policy.export_ban:
+                daily_price *= 0.70
+                
+            # 3. Subsidy (Percentage Reduction)
+            subsidy_amt = daily_price * (policy.subsidy_percent / 100.0)
+            daily_price -= subsidy_amt
+            
+            # Clamp to 0
+            daily_price = max(0.0, round(daily_price, 2))
+            
+            # For bounds, we scale them similarly or just center them around the new price?
+            # Ideally applying the same transform. Let's approximate by applying the delta.
+            # Or better: Apply the same logic to lower/upper.
+            
+            def apply_policy(val_quintal):
+                v = val_quintal / 100.0
+                v += diesel_impact
+                if policy.export_ban: v *= 0.70
+                v -= (v * (policy.subsidy_percent / 100.0))
+                return max(0.0, round(v, 2))
+
+            lower_kg = apply_policy(row['yhat_lower'])
+            upper_kg = apply_policy(row['yhat_upper'])
+
+            forecast_series.append({
+                "date": row['ds'].strftime('%Y-%m-%d'),
+                "price": daily_price,
+                "lower": lower_kg,
+                "upper": upper_kg
+            })
 
         forecast = model.predict(future)
         ref_forecast_df = model.predict(ref_future)
@@ -244,72 +280,60 @@ async def predict_price(policy: PolicyInput):
         # Get prediction for TARGET date
         target_row = forecast[forecast['ds'] == target_date]
         if target_row.empty:
-             # Fallback
              raw_target_price = forecast.iloc[-1]['yhat']
              conf_lower = forecast.iloc[-1]['yhat_lower']
              conf_upper = forecast.iloc[-1]['yhat_upper']
              prediction_date_str = forecast.iloc[-1]['ds'].strftime('%Y-%m-%d')
+             decomp_row = forecast.iloc[-1]
         else:
              raw_target_price = target_row.iloc[0]['yhat']
              conf_lower = target_row.iloc[0]['yhat_lower']
              conf_upper = target_row.iloc[0]['yhat_upper']
              prediction_date_str = target_row.iloc[0]['ds'].strftime('%Y-%m-%d')
+             decomp_row = target_row.iloc[0]
 
-        # Get prediction for REFERENCE date (Baseline)
+        # Get prediction for REFERENCE date
         ref_row = ref_forecast_df[ref_forecast_df['ds'] == ref_date]
         if ref_row.empty:
             ref_price = ref_forecast_df.iloc[-1]['yhat']
         else:
             ref_price = ref_row.iloc[0]['yhat']
         
-        # ============================================================
-        # UNIFIED ENSEMBLE: Prophet (price) × LSTM (direction)
-        # ============================================================
-        # Prophet: Best at price magnitude (~10% MAPE, trend + seasonality)
-        # LSTM:    Best at direction (76% accuracy at high confidence)
-        #
-        # Strategy: Confidence-Adaptive Blend
-        #   - Low LSTM confidence  → Trust Prophet's full prediction
-        #   - High LSTM confidence → Trust Prophet's magnitude but LSTM's direction
-        # ============================================================
-        
-        # --- Step 1: Get LSTM Predictions ---
-        lstm_forecasts = []
+        # LSTM Integration
         try:
-            lstm_forecasts = get_lstm_forecast()  # 30-day heuristic prices
+            lstm_forecasts = get_lstm_forecast()
             lstm_price_day1 = lstm_forecasts[0]
             lstm_price_day7 = lstm_forecasts[6]
             lstm_price_day30 = lstm_forecasts[29]
-        except Exception as e:
-            print(f"LSTM Price Error: {e}")
+        except:
             lstm_price_day1 = raw_target_price
             lstm_price_day7 = raw_target_price
             lstm_price_day30 = raw_target_price
-            lstm_forecasts = [raw_target_price] * 30
 
         try:
             direction_signal = get_lstm_direction_signal()
             lstm_direction = direction_signal["direction"]
             lstm_confidence = direction_signal["confidence_score"]
-            lstm_prob_up = direction_signal["probability_up"]
-        except Exception as e:
-            print(f"LSTM Direction Error: {e}")
+        except:
             lstm_direction = "NEUTRAL"
             lstm_confidence = 0.0
-            lstm_prob_up = 0.5
 
-        # --- Step 2: Confidence-Adaptive Ensemble ---
-        # Prophet's predicted change from baseline
+        # --- Unit Conversion (Quintal -> kg) ---
+        raw_target_price /= 100.0
+        ref_price /= 100.0
+        conf_lower /= 100.0
+        conf_upper /= 100.0
+        lstm_price_day1 /= 100.0
+        lstm_price_day7 /= 100.0
+        lstm_price_day30 /= 100.0
+
+        # Ensemble Logic
         prophet_change = raw_target_price - ref_price
         prophet_direction_up = prophet_change > 0
         lstm_direction_up = (lstm_direction == "UP")
         
-        # Blend weight: how much to trust LSTM's direction
-        # Below 0.30 confidence → 0% LSTM influence (Pure Prophet) - Ignored due to low accuracy (52%)
-        # Above 0.60 confidence → 100% LSTM influence (Full Override) - High accuracy (91%)
-        # Between → smooth ramp
-        CONF_FLOOR = 0.30   # Ignore noise (Low Confidence)
-        CONF_CEIL = 0.60    # Trust strong signals (Medium/High Confidence)
+        CONF_FLOOR = 0.30
+        CONF_CEIL = 0.60
         
         if lstm_confidence <= CONF_FLOOR:
             lstm_weight = 0.0
@@ -319,96 +343,150 @@ async def predict_price(policy: PolicyInput):
             lstm_weight = (lstm_confidence - CONF_FLOOR) / (CONF_CEIL - CONF_FLOOR)
         
         prophet_weight = 1.0 - lstm_weight
-        
-        # Prophet's price contribution (always provides the magnitude)
-        prophet_magnitude = abs(prophet_change)
-        min_magnitude = ref_price * 0.005  # At least 0.5% move to avoid flat predictions
-        magnitude = max(prophet_magnitude, min_magnitude)
+        magnitude = max(abs(prophet_change), ref_price * 0.005)
         
         if lstm_weight == 0:
-            # Pure Prophet
             final_price = raw_target_price
-            blend_mode = "PROPHET_ONLY"
         elif prophet_direction_up == lstm_direction_up:
-            # Both agree → amplify with confidence
-            boost = 1.0 + (lstm_weight * 0.15)  # Up to 15% amplification
+            boost = 1.0 + (lstm_weight * 0.15)
             final_price = ref_price + (prophet_change * boost)
-            blend_mode = f"AGREE_{lstm_direction}"
         else:
-            # Disagree → blend directions smoothly
-            # Prophet's vote: its original change
-            # LSTM's vote: flip the magnitude to LSTM's direction
             lstm_signed = magnitude if lstm_direction_up else -magnitude
-            prophet_signed = prophet_change
-            
-            blended_change = (prophet_signed * prophet_weight) + (lstm_signed * lstm_weight)
+            blended_change = (prophet_change * prophet_weight) + (lstm_signed * lstm_weight)
             final_price = ref_price + blended_change
-            blend_mode = f"BLEND_{lstm_direction}_{lstm_weight:.0%}"
         
-        print(f"Ensemble: Prophet={raw_target_price:.0f}, LSTM={lstm_direction}@{lstm_confidence:.2f}, "
-              f"Weight={lstm_weight:.2f}, Mode={blend_mode}, Final={final_price:.0f}")
+        # --- Policy Impacts (in kg) ---
+        diesel_impact = (policy.diesel_tax * 15) / 100.0 
+        final_price += diesel_impact
         
-        # Diesel Tax Impact
-        final_price += (policy.diesel_tax * 15)
-        
-        # Export Ban Impact
         status_msg = "Normal Market Conditions"
-        
-        # Enrich status with directional signal
-        if lstm_confidence >= CONF_CEIL:
-             if lstm_direction == "UP":
-                 status_msg = f"Strong Bullish Signal (LSTM Conf: {lstm_confidence:.0%})"
-             else:
-                 status_msg = f"Strong Bearish Signal (LSTM Conf: {lstm_confidence:.0%})"
-        elif lstm_confidence > CONF_FLOOR:
-             status_msg = f"Moderate Market Signal"
-        
-        # Check Volatility (Overrides Normal)
-        if policy.volatility_slider > 7.0:
-            status_msg = "CRITICAL: High Market Volatility Detected"
-        elif policy.volatility_slider > 4.0:
-            status_msg = "Warning: Elevated Market Stress"
-
-        # Export Ban overrides everything
         if policy.export_ban:
             final_price *= 0.70
-            status_msg = "Warning: Export Ban Triggered - Market Crash Imminent"
+            status_msg = "Warning: Export Ban Triggered"
             
-        # Subsidy Impact
-        final_price -= (final_price * (policy.subsidy_percent / 100))
-        
+        subsidy_amount = final_price * (policy.subsidy_percent / 100.0)
+        final_price -= subsidy_amount
+        subsidy_impact = -subsidy_amount
+
         final_price = max(0.0, final_price)
 
-        # Calculate Confidence Percentage
-        # Cap lower at 0 to avoid huge ranges if model predicts negative
-        safe_conf_lower = max(0.0, conf_lower)
-        safe_conf_upper = max(safe_conf_lower, conf_upper)
+        if policy.volatility_slider > 7.0: status_msg = "CRITICAL: High Market Volatility"
+        elif policy.volatility_slider > 4.0: status_msg = "Warning: Elevated Market Stress"
+
+        # --- Confidence Score (Dynamic) ---
+        # Base confidence starts high for Prophet (it's generally good at trend)
+        base_conf = 85.0
         
-        interval_mean = (safe_conf_upper + safe_conf_lower) / 2
-        if interval_mean > 0:
-            half_width = (safe_conf_upper - safe_conf_lower) / 2
-            confidence_pct = (half_width / interval_mean) * 100
+        # 1. Penalize for Volatility (Panic Index)
+        # Slider 0-10. Each point drops confidence by ~1.5%
+        base_conf -= (policy.volatility_slider * 1.5)
+        
+        # 2. Adjust by LSTM Agreement/Confidence
+        # lstm_confidence is 0.0 to 1.0 (or similar scale, checking value)
+        # If it's 0-100, we normalize. Assuming 0-1 here effectively.
+        
+        # Normalize lstm_conf to 0-1 range just in case
+        l_conf_norm = max(0.0, min(1.0, float(lstm_confidence)))
+
+        if prophet_direction_up == lstm_direction_up:
+             # Agreement: Boost proportional to LSTM strength
+             # Max boost: +10%
+             base_conf += (l_conf_norm * 10.0)
         else:
-            confidence_pct = 0.0
-            
-        # HACK: Cap confidence at 35% for UI stability during pitch
-        # (Real world models explode to 100% over 3 years, but that looks broken to users)
-        confidence_pct = min(confidence_pct, 35.0)
+             # Disagreement: Penalty proportional to LSTM strength
+             # Max penalty: -20% (if LSTM is very sure but wrong vs Prophet)
+             base_conf -= (l_conf_norm * 20.0)
+             
+        # 3. Micro-Jitter for Simulation "Feel"
+        # REMOVED: Artificial jitter removes "natural" feeling of correctness
+        # base_conf += random.uniform(-1.5, 1.5)
+
+        # Cap confidence
+        confidence_score = min(99.0, max(40.0, base_conf))
         
-        # 3. Log to Blockchain
+        # Derive bounds from confidence (higher confidence = narrower bounds)
+        spread_pct = (100.0 - confidence_score) / 100.0
+        
+        safe_lower = final_price * (1.0 - (spread_pct * 0.5)) # Tighter lower bound
+        conf_upper = final_price * (1.0 + (spread_pct * 0.5)) # Tighter upper bound
+
+        # --- Decomposition (Corrected for Multiplicative Mode) ---
+        # Model is multiplicative: yhat = trend * (1 + season + regressors)
+        # So Absolute Impact = Trend * Component_Factor
+        
+        raw_trend = decomp_row['trend'] # Quintal price trend
+        
+        # Robust Seasonality Calculation
+        # Sum all seasonality components that exist in the dataframe
+        season_components = ['weekly', 'yearly', 'monthly', 'daily']
+        available_components = [c for c in season_components if c in decomp_row]
+        
+        season_factor = sum(decomp_row[c] for c in available_components)
+        
+        season_kg = (raw_trend * season_factor) / 100.0
+        season_kg = (raw_trend * season_factor) / 100.0
+        
+        # Regressors
+        trans_factor = decomp_row.get('transport_lag_3', 0)
+        trans_kg = (raw_trend * trans_factor) / 100.0
+        
+        ndvi_factor = decomp_row.get('ndvi_mean', 0)
+        ndvi_kg = (raw_trend * ndvi_factor) / 100.0
+        
+        panic_factor = decomp_row.get('panic_index', 0)
+        panic_kg = (raw_trend * panic_factor) / 100.0
+        
+        # Policy: Diesel & Subsidy are applied AFTER Prophet in main.py logic (Lines 289, 297),
+        # so they are absolute values already calculated above.
+        # diesel_impact, subsidy_impact are already in kg/absolute terms.
+        
+        # Market Impact (Residual)
+        # In multiplicative, the "Market" is the base trend + national avg (if regressor) + rainfall (if regressor)
+        # But here we treat "Market Structure" as the Trend itself + uncaptured residuals.
+        # Let's define Market Impact as Trend (base price) + whatever is left.
+        # Or simpler: Market Impact = Final - (Season + Transport + NDVI + Panic + Diesel + Subsidy)
+        # This captures the "Base Price" (Trend) as part of Market.
+        
+        # Let's present "Trend" purely as the long-term move.
+        trend_kg_val = raw_trend / 100.0
+        
+        # The "Market Impact" in the UI usually represents the 'Base State' or 'External Factors'. 
+        # Let's set it to be the Trend value itself plus any unassigned regressors (Rainfall, National Avg).
+        
+        nat_avg_factor = decomp_row.get('national_avg_price', 0)
+        rain_factor = decomp_row.get('rainfall', 0)
+        
+        other_factors = (nat_avg_factor + rain_factor)
+        other_kg = (raw_trend * other_factors) / 100.0
+        
+        # We will group "Trend" (Base) and "Other" into a "Market Structure" or keep Trend separate?
+        # The UI shows "Trend" and "Market Impact". 
+        # Let's say Market Impact = Other Regressors (Rain, National Avg) + Residuals.
+        
+        market_impact = other_kg
+        
+        decomp = {
+            "trend": round(trend_kg_val, 2),
+            "seasonality": round(season_kg, 2),
+            "transport_impact": round(trans_kg, 2),
+            "ndvi_impact": round(ndvi_kg, 2),
+            "panic_impact": round(panic_kg, 2),
+            "diesel_impact": round(diesel_impact, 2),
+            "subsidy_impact": round(subsidy_impact, 2),
+            "market_impact": round(market_impact, 2)
+        }
+
         tx_hash = log_to_polygon(final_price, policy.dict())
-        
-        # 4. Get Real Value (if available)
         real_val = actuals_map.get(target_date, None)
         
         return {
             "commodity": "Onion",
-            "baseline_prediction": round(ref_price, 2), # CHANGED: Now returns price at Reference Date
+            "baseline_prediction": round(ref_price, 2),
             "final_adjusted_price": round(final_price, 2),
-            "confidence_lower": round(safe_conf_lower, 2),
-            "confidence_upper": round(safe_conf_upper, 2),
-            "confidence_score": round(confidence_pct, 1), # NEW: Pre-calculated percentage
-            "real_value": round(real_val, 2) if real_val else None,
+            "confidence_lower": round(safe_lower, 2),
+            "confidence_upper": round(conf_upper, 2),
+            "confidence_score": round(confidence_score, 1),
+            "real_value": round(real_val / 100.0, 2) if real_val else None,
             "status_message": status_msg,
             "polygon_tx_hash": tx_hash,
             "prediction_date": prediction_date_str,
@@ -419,14 +497,18 @@ async def predict_price(policy: PolicyInput):
                 "lstm_day30": round(lstm_price_day30, 2)
             },
             "debug_target_date": str(target_date),
-            "debug_future_tail": str(future['ds'].tail().tolist()),
-            "lstm_direction": get_lstm_direction_signal() 
+            "lstm_direction": get_lstm_direction_signal(),
+            "decomposition": decomp,
+            "forecast_trend": forecast_series
         }
         
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+# Mount frontend LAST (catch-all) so API routes take priority
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
-
