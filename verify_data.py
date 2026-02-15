@@ -109,18 +109,18 @@ def verify_commodity_data(date, market_data_dict):
         blockchain_hash = contract.functions.getHash(date).call()
         print(f"Trusted Hash from Blockchain:  {blockchain_hash}")
     except Exception as e:
-        print(f"❌ Error reading from blockchain: {e}")
+        print(f"Error reading from blockchain: {e}")
         return False
 
     # Step C: The Cryptographic Verification
     if blockchain_hash == "":
-        print("⚠️ WARNING: No data found on the blockchain for this date.")
+        print("WARNING: No data found on the blockchain for this date.")
         return False
     elif current_hash == blockchain_hash:
-        print("✅ SUCCESS: Data is completely authentic. Safe for AI processing.")
+        print("SUCCESS: Data is completely authentic. Safe for AI processing.")
         return True
     else:
-        print("🚨 ALERT: TAMPERING DETECTED! Local data does not match the Web3 record.")
+        print("ALERT: TAMPERING DETECTED! Local data does not match the Web3 record.")
         return False
 
 # --- Example of how the AI/Data Team will use this ---
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     is_valid = verify_commodity_data("2026-02-13", ai_dataset)
     
     if is_valid:
-        print("\n>> Proceeding to run Machine Learning model...")
+        print("\n>> Proceeding to run the Machine Learning model...")
         # ai_model.predict(ai_dataset)
     else:
         print("\n>> System Halted: Refusing to process corrupted buffer stock data.")
