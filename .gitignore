@@ -51,3 +51,7 @@ metrics.txt
 .vscode/
 *.swp
 
+# Additional safety
+node_modules/
+.env.*
+!.env.example
